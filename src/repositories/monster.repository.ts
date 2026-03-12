@@ -70,6 +70,7 @@ export class DrizzleMonsterRepository implements IMonsterRepository {
         // 1. monsters table
         await tx.insert(monsters).values({
           id: monster.id,
+          type: monster.type,
           character_name: data.CharacterName,
           alignment: data.Alignment,
           race: data.Race,
@@ -87,7 +88,14 @@ export class DrizzleMonsterRepository implements IMonsterRepository {
           challenge_rating: legendary ? data.ChallengeRating : undefined,
           proficiency_bonus: legendary ? data.ProficiencyBonus : undefined,
           legendary_action_uses: legendary
-            ? parseInt(data.LegendaryActions['Legendary Action Uses'], 10)
+            ? (() => {
+                const uses = parseInt(data.LegendaryActions['Legendary Action Uses'], 10);
+                if (isNaN(uses)) {
+                  this.log.warn({ monsterId: monster.id, raw: data.LegendaryActions['Legendary Action Uses'] }, 'Invalid Legendary Action Uses — defaulting to 2');
+                  return 2;
+                }
+                return uses;
+              })()
             : undefined,
           damage_resistances: legendary ? data.DamageResistances : undefined,
           damage_immunities: legendary ? data.DamageImmunities : undefined,
@@ -243,11 +251,7 @@ export class DrizzleMonsterRepository implements IMonsterRepository {
       const specialTraits = traitsOfCategory('special_trait');
       const actions = traitsOfCategory('action');
 
-      // Determine if legendary based on presence of legendary-only columns
-      const isLegendary =
-        monsterRow.challenge_rating !== null ||
-        monsterRow.proficiency_bonus !== null ||
-        monsterRow.legendary_action_uses !== null;
+      const isLegendary = monsterRow.type === 'legendary';
 
       if (isLegendary) {
         const legendaryData: LegendaryMonsterTemplate = {

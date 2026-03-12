@@ -51,7 +51,7 @@ const GeneralMonsterBodySchema = z.object({
 });
 
 const LegendaryActionsSchema = z.object({
-  'Legendary Action Uses': z.string(),
+  'Legendary Action Uses': z.string().regex(/^\d+$/, 'Legendary Action Uses must be a whole number'),
   Options: z.record(z.string(), z.string()),
 });
 const MythicTraitSchema = z.object({ Name: z.string(), Description: z.string() });

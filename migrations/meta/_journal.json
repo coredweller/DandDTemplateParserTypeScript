@@ -15,6 +15,13 @@
       "when": 1773195390924,
       "tag": "0001_monsters",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1773195390925,
+      "tag": "0002_monster_type",
+      "breakpoints": true
     }
   ]
 }

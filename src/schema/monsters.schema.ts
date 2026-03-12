@@ -14,6 +14,7 @@ export const traitCategoryEnum = pgEnum('trait_category', [
 // ── monsters ───────────────────────────────────────────────────────────────────
 export const monsters = pgTable('monsters', {
   id: uuid('id').primaryKey().defaultRandom(),
+  type: text('type', { enum: ['general', 'legendary'] }).notNull(),
   character_name: text('character_name').notNull(),
   alignment: text('alignment').notNull().default(''),
   race: text('race').notNull().default(''),
