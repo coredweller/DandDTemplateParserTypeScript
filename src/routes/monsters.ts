@@ -1,3 +1,4 @@
+import type { FastifyBaseLogger } from 'fastify';
 import type { FastifyPluginCallbackZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import type { AppError } from '../domain/errors.js';
@@ -5,7 +6,7 @@ import { monsterIdFrom } from '../domain/monster.js';
 import type { IMonsterService } from '../services/monster.service.interface.js';
 
 // ── HTTP translation — maps domain errors to status codes ──────────────────────
-function statusFor(error: AppError): 400 | 404 | 409 | 500 {
+function statusFor(error: AppError, log: FastifyBaseLogger): 400 | 404 | 409 | 500 {
   switch (error.kind) {
     case 'NotFound':        return 404;
     case 'ValidationError': return 400;
@@ -13,7 +14,7 @@ function statusFor(error: AppError): 400 | 404 | 409 | 500 {
     case 'InternalError':   return 500;
     default: {
       const _exhaustive: never = error;
-      console.error(`Unhandled AppError kind: ${(_exhaustive as AppError).kind}`);
+      log.error({ kind: (_exhaustive as AppError).kind }, 'Unhandled AppError kind');
       return 500;
     }
   }
@@ -100,7 +101,7 @@ export function monstersPlugin(service: IMonsterService): FastifyPluginCallbackZ
         const result = await service.createGeneral(request.body);
 
         if (!result.ok) {
-          const code = statusFor(result.error);
+          const code = statusFor(result.error, request.log);
           return reply.status(code as 400).send({
             type: 'https://tools.ietf.org/html/rfc7807',
             title: result.error.kind === 'ValidationError' ? result.error.message : 'Bad Request',
@@ -129,7 +130,7 @@ export function monstersPlugin(service: IMonsterService): FastifyPluginCallbackZ
         const result = await service.createLegendary(request.body);
 
         if (!result.ok) {
-          const code = statusFor(result.error);
+          const code = statusFor(result.error, request.log);
           return reply.status(code as 400).send({
             type: 'https://tools.ietf.org/html/rfc7807',
             title: result.error.kind === 'ValidationError' ? result.error.message : 'Bad Request',
@@ -158,7 +159,7 @@ export function monstersPlugin(service: IMonsterService): FastifyPluginCallbackZ
         const result = await service.getById(monsterIdFrom(request.params.id));
 
         if (!result.ok) {
-          const code = statusFor(result.error);
+          const code = statusFor(result.error, request.log);
           return reply.status(code as 404).send({
             type: 'https://tools.ietf.org/html/rfc7807',
             title: `Monster ${request.params.id} not found.`,

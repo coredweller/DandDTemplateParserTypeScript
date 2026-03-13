@@ -181,33 +181,20 @@ export class DrizzleMonsterRepository implements IMonsterRepository {
 
   async findById(id: MonsterId): Promise<Monster | null> {
     try {
-      const monsterRows = await this.db
-        .select()
-        .from(monsters)
-        .where(eq(monsters.id, id))
-        .limit(1);
+      const [monsterRows, abilityRows, savingThrowRows, skillRows, traitRows, regionalEffectRows] =
+        await Promise.all([
+          this.db.select().from(monsters).where(eq(monsters.id, id)).limit(1),
+          this.db.select().from(monsterAbilityScores).where(eq(monsterAbilityScores.monster_id, id)),
+          this.db.select().from(monsterSavingThrows).where(eq(monsterSavingThrows.monster_id, id)),
+          this.db.select().from(monsterSkills).where(eq(monsterSkills.monster_id, id)),
+          this.db.select().from(monsterTraits).where(eq(monsterTraits.monster_id, id)).orderBy(monsterTraits.ordinal),
+          this.db.select().from(monsterRegionalEffects).where(eq(monsterRegionalEffects.monster_id, id)).orderBy(monsterRegionalEffects.ordinal),
+        ]);
 
       const monsterRow = monsterRows[0];
       if (!monsterRow) {
         return null;
       }
-
-      const [abilityRows, savingThrowRows, skillRows, traitRows, regionalEffectRows] =
-        await Promise.all([
-          this.db.select().from(monsterAbilityScores).where(eq(monsterAbilityScores.monster_id, id)),
-          this.db.select().from(monsterSavingThrows).where(eq(monsterSavingThrows.monster_id, id)),
-          this.db.select().from(monsterSkills).where(eq(monsterSkills.monster_id, id)),
-          this.db
-            .select()
-            .from(monsterTraits)
-            .where(eq(monsterTraits.monster_id, id))
-            .orderBy(monsterTraits.ordinal),
-          this.db
-            .select()
-            .from(monsterRegionalEffects)
-            .where(eq(monsterRegionalEffects.monster_id, id))
-            .orderBy(monsterRegionalEffects.ordinal),
-        ]);
 
       const abilityRow = abilityRows[0];
       if (!abilityRow) {
