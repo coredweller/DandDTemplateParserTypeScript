@@ -6,6 +6,8 @@ import {
   validatorCompiler,
 } from 'fastify-type-provider-zod';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import type { Logger } from 'pino';
 import { config } from './config.js';
 import { db } from './db.js';
@@ -23,7 +25,8 @@ export async function buildApp(deps: AppDeps = {}) {
   // Run pending migrations before accepting traffic.
   // drizzle-orm/migrator reads the SQL files directly — drizzle-kit is not required at runtime.
   if (config.NODE_ENV !== 'test') {
-    await migrate(db, { migrationsFolder: './migrations' });
+    const migrationsFolder = join(dirname(fileURLToPath(import.meta.url)), '../migrations');
+    await migrate(db, { migrationsFolder });
   }
 
   // Build logger options — conditionally include transport only in development
