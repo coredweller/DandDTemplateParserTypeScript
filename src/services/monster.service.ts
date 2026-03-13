@@ -17,32 +17,43 @@ export class MonsterService implements IMonsterService {
   ) {}
 
   async createGeneral(data: GeneralMonsterTemplate): Promise<Result<{ id: MonsterId; html: string }>> {
-    const monster = createMonster('general', data);
-    await this.repository.save(monster);
-
-    const html = renderMonsterHtml(monster);
-    this.log.info({ monsterId: monster.id, characterName: data.CharacterName }, 'General monster created');
-    return ok({ id: monster.id, html });
+    try {
+      const monster = createMonster('general', data);
+      await this.repository.save(monster);
+      const html = renderMonsterHtml(monster);
+      this.log.info({ monsterId: monster.id, characterName: data.CharacterName }, 'General monster created');
+      return ok({ id: monster.id, html });
+    } catch (error: unknown) {
+      this.log.error({ err: error, characterName: data.CharacterName }, 'Failed to create general monster');
+      return fail({ kind: 'InternalError', message: 'Failed to save monster' });
+    }
   }
 
   async createLegendary(data: LegendaryMonsterTemplate): Promise<Result<{ id: MonsterId; html: string }>> {
-    const monster = createMonster('legendary', data);
-    await this.repository.save(monster);
-
-    const html = renderMonsterHtml(monster);
-    this.log.info({ monsterId: monster.id, characterName: data.CharacterName }, 'Legendary monster created');
-    return ok({ id: monster.id, html });
+    try {
+      const monster = createMonster('legendary', data);
+      await this.repository.save(monster);
+      const html = renderMonsterHtml(monster);
+      this.log.info({ monsterId: monster.id, characterName: data.CharacterName }, 'Legendary monster created');
+      return ok({ id: monster.id, html });
+    } catch (error: unknown) {
+      this.log.error({ err: error, characterName: data.CharacterName }, 'Failed to create legendary monster');
+      return fail({ kind: 'InternalError', message: 'Failed to save monster' });
+    }
   }
 
   async getById(id: MonsterId): Promise<Result<{ id: MonsterId; html: string }>> {
-    const monster = await this.repository.findById(id);
-
-    if (!monster) {
-      this.log.warn({ monsterId: id }, 'Monster not found');
-      return fail({ kind: 'NotFound', id });
+    try {
+      const monster = await this.repository.findById(id);
+      if (!monster) {
+        this.log.warn({ monsterId: id }, 'Monster not found');
+        return fail({ kind: 'NotFound', id });
+      }
+      const html = renderMonsterHtml(monster);
+      return ok({ id: monster.id, html });
+    } catch (error: unknown) {
+      this.log.error({ err: error, monsterId: id }, 'Failed to retrieve monster');
+      return fail({ kind: 'InternalError', message: 'Failed to retrieve monster' });
     }
-
-    const html = renderMonsterHtml(monster);
-    return ok({ id: monster.id, html });
   }
 }

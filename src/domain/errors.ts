@@ -2,7 +2,8 @@
 export type AppError =
   | { readonly kind: 'NotFound'; readonly id: string }
   | { readonly kind: 'ValidationError'; readonly message: string }
-  | { readonly kind: 'Conflict'; readonly message: string };
+  | { readonly kind: 'Conflict'; readonly message: string }
+  | { readonly kind: 'InternalError'; readonly message: string };
 
 // ── Result<T> — makes error states explicit in function signatures ──────────
 export type Result<T, E = AppError> =

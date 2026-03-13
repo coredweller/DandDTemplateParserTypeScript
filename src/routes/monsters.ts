@@ -10,6 +10,7 @@ function statusFor(error: AppError): 400 | 404 | 409 | 500 {
     case 'NotFound':        return 404;
     case 'ValidationError': return 400;
     case 'Conflict':        return 409;
+    case 'InternalError':   return 500;
     default: {
       const _exhaustive: never = error;
       console.error(`Unhandled AppError kind: ${(_exhaustive as AppError).kind}`);
