@@ -9,10 +9,6 @@ import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import type { Logger } from 'pino';
 import { config } from './config.js';
 import { db } from './db.js';
-import { DrizzleWorkItemRepository } from './repositories/work-item.repository.js';
-import { WorkItemService } from './services/work-item.service.js';
-import type { IWorkItemService } from './services/work-item.service.interface.js';
-import { workItemsPlugin } from './routes/work-items.js';
 import { DrizzleMonsterRepository } from './repositories/monster.repository.js';
 import { MonsterService } from './services/monster.service.js';
 import type { IMonsterService } from './services/monster.service.interface.js';
@@ -20,7 +16,6 @@ import { monstersPlugin } from './routes/monsters.js';
 
 // Optional deps allow tests to inject stub implementations without vi.mock()
 interface AppDeps {
-  service?: IWorkItemService;
   monsterService?: IMonsterService;
 }
 
@@ -62,15 +57,10 @@ export async function buildApp(deps: AppDeps = {}) {
   // Cast FastifyBaseLogger to pino Logger — Fastify's base logger is a superset
   // at runtime, but the types diverge on rarely-used members like msgPrefix.
   const log = app.log as unknown as Logger;
-  const repository = new DrizzleWorkItemRepository(db, log);
-  const service = deps.service ?? new WorkItemService(repository, log);
-
-  // ── Monster dependencies ──────────────────────────────────────────────────
   const monsterRepository = new DrizzleMonsterRepository(db, log);
   const monsterService = deps.monsterService ?? new MonsterService(monsterRepository, log);
 
   // ── Routes ─────────────────────────────────────────────────────────────────
-  await app.register(workItemsPlugin(service), { prefix: '/api/v1' });
   await app.register(monstersPlugin(monsterService), { prefix: '/api/v1' });
 
   // ── Health check ───────────────────────────────────────────────────────────

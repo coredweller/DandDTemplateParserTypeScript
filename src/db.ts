@@ -1,7 +1,6 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { config } from './config.js';
-import * as workItemsSchema from './schema/work-items.schema.js';
 import * as monstersSchema from './schema/monsters.schema.js';
 
 const client = postgres(config.DATABASE_URL, {
@@ -9,5 +8,5 @@ const client = postgres(config.DATABASE_URL, {
   idle_timeout: 30,   // seconds before idle connections are closed
 });
 
-export const db = drizzle(client, { schema: { ...workItemsSchema, ...monstersSchema } });
+export const db = drizzle(client, { schema: { ...monstersSchema } });
 export type Db = typeof db;
