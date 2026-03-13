@@ -9,6 +9,12 @@ export function monsterIdFrom(value: string): MonsterId {
   return value as MonsterId;
 }
 
+// ── Domain helpers ───────────────────────────────────────────────────────────
+export function abilityModifier(score: number): string {
+  const mod = Math.floor((score - 10) / 2);
+  return mod >= 0 ? `+${mod}` : `${mod}`;
+}
+
 // ── Supporting types ────────────────────────────────────────────────────────
 export interface AbilityScore {
   readonly Score: number;

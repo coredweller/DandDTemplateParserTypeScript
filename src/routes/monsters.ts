@@ -2,7 +2,7 @@ import type { FastifyBaseLogger } from 'fastify';
 import type { FastifyPluginCallbackZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import type { AppError } from '../domain/errors.js';
-import { monsterIdFrom } from '../domain/monster.js';
+import { abilityModifier, monsterIdFrom } from '../domain/monster.js';
 import type { IMonsterService } from '../services/monster.service.interface.js';
 
 // ── HTTP translation — maps domain errors to status codes ──────────────────────
@@ -21,7 +21,9 @@ function statusFor(error: AppError, log: FastifyBaseLogger): 400 | 404 | 409 | 5
 }
 
 // ── Zod schemas ────────────────────────────────────────────────────────────────
-const AbilityScoreSchema = z.object({ Score: z.number().int(), Modifier: z.string() });
+const AbilityScoreSchema = z
+  .object({ Score: z.number().int() })
+  .transform(({ Score }) => ({ Score, Modifier: abilityModifier(Score) }));
 const AbilityScoresSchema = z.object({
   Strength: AbilityScoreSchema,
   Dexterity: AbilityScoreSchema,

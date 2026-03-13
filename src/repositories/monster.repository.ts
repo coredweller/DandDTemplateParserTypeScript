@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import type { Logger } from 'pino';
 import type { Db } from '../db.js';
 import {
+  abilityModifier,
   reconstituteMonster,
   type AbilityScores,
   type GeneralMonsterTemplate,
@@ -19,11 +20,6 @@ import {
   type NewMonsterTraitRow,
 } from '../schema/monsters.schema.js';
 import type { IMonsterRepository } from './monster.repository.interface.js';
-
-function abilityModifier(score: number): string {
-  const mod = Math.floor((score - 10) / 2);
-  return mod >= 0 ? `+${mod}` : `${mod}`;
-}
 
 type TraitCategory =
   | 'special_trait'
