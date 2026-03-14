@@ -90,6 +90,7 @@ export const monsterTraits = pgTable('monster_traits', {
 
 export type MonsterTraitRow = typeof monsterTraits.$inferSelect;
 export type NewMonsterTraitRow = typeof monsterTraits.$inferInsert;
+export type TraitCategory = (typeof traitCategoryEnum.enumValues)[number];
 
 // ── monster_regional_effects ───────────────────────────────────────────────────
 export const monsterRegionalEffects = pgTable('monster_regional_effects', {

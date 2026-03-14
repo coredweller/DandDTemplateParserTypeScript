@@ -1,8 +1,7 @@
-import type {
-  AbilityScores,
-  GeneralMonsterTemplate,
-  LegendaryMonsterTemplate,
-  Monster,
+import {
+  isLegendaryMonster,
+  type AbilityScores,
+  type Monster,
 } from './monster.js';
 
 function escapeHtml(text: string): string {
@@ -66,10 +65,6 @@ function renderRecordInline(label: string, entries: Record<string, string>): str
   return `<p><strong>${escapeHtml(label)}</strong> ${parts}</p>`;
 }
 
-function isLegendary(data: GeneralMonsterTemplate | LegendaryMonsterTemplate): data is LegendaryMonsterTemplate {
-  return 'ChallengeRating' in data;
-}
-
 // ── CSS ──────────────────────────────────────────────────────────────────────
 const STYLES = `
   body { margin:0; padding:20px; background:#f5f0e1; font-family:'Palatino Linotype',Palatino,'Book Antiqua',serif; color:#000; }
@@ -97,36 +92,37 @@ export function renderMonsterHtml(monster: Monster): string {
   let legendaryPropertiesHtml = '';
   let legendarySectionsHtml = '';
 
-  if (isLegendary(d)) {
+  if (isLegendaryMonster(monster)) {
+    const ld = monster.data;
     legendaryPropertiesHtml = [
-      d.DamageResistances ? renderPropertyLine('Damage Resistances', d.DamageResistances) : '',
-      d.DamageImmunities ? renderPropertyLine('Damage Immunities', d.DamageImmunities) : '',
-      d.ConditionImmunities ? renderPropertyLine('Condition Immunities', d.ConditionImmunities) : '',
-      d.ChallengeRating ? renderPropertyLine('Challenge Rating', d.ChallengeRating) : '',
-      d.ProficiencyBonus ? renderPropertyLine('Proficiency Bonus', d.ProficiencyBonus) : '',
+      ld.DamageResistances ? renderPropertyLine('Damage Resistances', ld.DamageResistances) : '',
+      ld.DamageImmunities ? renderPropertyLine('Damage Immunities', ld.DamageImmunities) : '',
+      ld.ConditionImmunities ? renderPropertyLine('Condition Immunities', ld.ConditionImmunities) : '',
+      ld.ChallengeRating ? renderPropertyLine('Challenge Rating', ld.ChallengeRating) : '',
+      ld.ProficiencyBonus ? renderPropertyLine('Proficiency Bonus', ld.ProficiencyBonus) : '',
     ].filter(Boolean).join('');
 
-    const optionEntries = Object.entries(d.LegendaryActions.Options)
+    const optionEntries = Object.entries(ld.LegendaryActions.Options)
       .map(([name, desc]) => `<p><strong><em>${escapeHtml(name)}.</em></strong> ${escapeHtml(desc)}</p>`)
       .join('');
 
-    const legendaryActionsHtml = `<h2>Legendary Actions</h2><p><em>${escapeHtml(d.LegendaryActions['Legendary Action Uses'])}</em></p>${optionEntries}`;
+    const legendaryActionsHtml = `<h2>Legendary Actions</h2><p><em>${escapeHtml(ld.LegendaryActions['Legendary Action Uses'])}</em></p>${optionEntries}`;
 
-    const mythicTraitHtml = d.MythicTrait.Name
-      ? `<h2>Mythic Trait</h2><p><strong><em>${escapeHtml(d.MythicTrait.Name)}.</em></strong> ${escapeHtml(d.MythicTrait.Description)}</p>`
+    const mythicTraitHtml = ld.MythicTrait.Name
+      ? `<h2>Mythic Trait</h2><p><strong><em>${escapeHtml(ld.MythicTrait.Name)}.</em></strong> ${escapeHtml(ld.MythicTrait.Description)}</p>`
       : '';
 
-    const regionalEffectsHtml = d.RegionalEffects.length > 0
-      ? `<h2>Regional Effects</h2><ul>${d.RegionalEffects.map((e) => `<li>${escapeHtml(e)}</li>`).join('')}</ul>`
+    const regionalEffectsHtml = ld.RegionalEffects.length > 0
+      ? `<h2>Regional Effects</h2><ul>${ld.RegionalEffects.map((e) => `<li>${escapeHtml(e)}</li>`).join('')}</ul>`
       : '';
 
     legendarySectionsHtml = [
-      renderSection('Bonus Actions', d.BonusActions),
-      renderSection('Reactions', d.Reactions),
-      renderSection('Legendary Traits', d.LegendaryTraits),
+      renderSection('Bonus Actions', ld.BonusActions),
+      renderSection('Reactions', ld.Reactions),
+      renderSection('Legendary Traits', ld.LegendaryTraits),
       legendaryActionsHtml,
       mythicTraitHtml,
-      renderSection('Lair Actions', d.LairActions),
+      renderSection('Lair Actions', ld.LairActions),
       regionalEffectsHtml,
     ].filter(Boolean).join('');
   }

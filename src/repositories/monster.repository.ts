@@ -3,6 +3,7 @@ import type { Logger } from 'pino';
 import type { Db } from '../db.js';
 import {
   abilityModifier,
+  isLegendaryMonster,
   reconstituteMonster,
   type AbilityScores,
   type GeneralMonsterTemplate,
@@ -18,24 +19,9 @@ import {
   monsterTraits,
   monsterRegionalEffects,
   type NewMonsterTraitRow,
+  type TraitCategory,
 } from '../schema/monsters.schema.js';
 import type { IMonsterRepository } from './monster.repository.interface.js';
-
-type TraitCategory =
-  | 'special_trait'
-  | 'action'
-  | 'bonus_action'
-  | 'reaction'
-  | 'legendary_trait'
-  | 'legendary_action_option'
-  | 'lair_action';
-
-function isLegendaryData(
-  type: 'general' | 'legendary',
-  data: GeneralMonsterTemplate | LegendaryMonsterTemplate,
-): data is LegendaryMonsterTemplate {
-  return type === 'legendary';
-}
 
 export class DrizzleMonsterRepository implements IMonsterRepository {
   constructor(
@@ -59,61 +45,60 @@ export class DrizzleMonsterRepository implements IMonsterRepository {
 
   async save(monster: Monster): Promise<Monster> {
     try {
-      const { data } = monster;
-      const legendary = isLegendaryData(monster.type, data);
+      const legendary = isLegendaryMonster(monster);
 
       await this.db.transaction(async (tx) => {
         // 1. monsters table
         await tx.insert(monsters).values({
           id: monster.id,
           type: monster.type,
-          character_name: data.CharacterName,
-          alignment: data.Alignment,
-          race: data.Race,
-          class: data.Class,
-          level: data.Level,
-          hp: data.HP,
-          ac: data.AC,
-          speed: data.Speed,
-          senses: data.Senses,
-          languages: data.Languages,
-          notes: data.Notes,
-          equipment_armor: data.Equipment.Armor,
-          equipment_weapons: data.Equipment.Weapons,
-          equipment_other: data.Equipment.Other,
-          challenge_rating: legendary ? data.ChallengeRating : undefined,
-          proficiency_bonus: legendary ? data.ProficiencyBonus : undefined,
+          character_name: monster.data.CharacterName,
+          alignment: monster.data.Alignment,
+          race: monster.data.Race,
+          class: monster.data.Class,
+          level: monster.data.Level,
+          hp: monster.data.HP,
+          ac: monster.data.AC,
+          speed: monster.data.Speed,
+          senses: monster.data.Senses,
+          languages: monster.data.Languages,
+          notes: monster.data.Notes,
+          equipment_armor: monster.data.Equipment.Armor,
+          equipment_weapons: monster.data.Equipment.Weapons,
+          equipment_other: monster.data.Equipment.Other,
+          challenge_rating: legendary ? monster.data.ChallengeRating : undefined,
+          proficiency_bonus: legendary ? monster.data.ProficiencyBonus : undefined,
           legendary_action_uses: legendary
             ? (() => {
-                const uses = parseInt(data.LegendaryActions['Legendary Action Uses'], 10);
+                const uses = parseInt(monster.data.LegendaryActions['Legendary Action Uses'], 10);
                 if (isNaN(uses)) {
-                  this.log.warn({ monsterId: monster.id, raw: data.LegendaryActions['Legendary Action Uses'] }, 'Invalid Legendary Action Uses — defaulting to 2');
+                  this.log.warn({ monsterId: monster.id, raw: monster.data.LegendaryActions['Legendary Action Uses'] }, 'Invalid Legendary Action Uses — defaulting to 2');
                   return 2;
                 }
                 return uses;
               })()
             : undefined,
-          damage_resistances: legendary ? data.DamageResistances : undefined,
-          damage_immunities: legendary ? data.DamageImmunities : undefined,
-          condition_immunities: legendary ? data.ConditionImmunities : undefined,
-          mythic_trait_name: legendary ? data.MythicTrait.Name : undefined,
-          mythic_trait_description: legendary ? data.MythicTrait.Description : undefined,
+          damage_resistances: legendary ? monster.data.DamageResistances : undefined,
+          damage_immunities: legendary ? monster.data.DamageImmunities : undefined,
+          condition_immunities: legendary ? monster.data.ConditionImmunities : undefined,
+          mythic_trait_name: legendary ? monster.data.MythicTrait.Name : undefined,
+          mythic_trait_description: legendary ? monster.data.MythicTrait.Description : undefined,
           created_at: monster.createdAt,
         });
 
         // 2. ability scores
         await tx.insert(monsterAbilityScores).values({
           monster_id: monster.id,
-          strength: data.AbilityScores.Strength.Score,
-          dexterity: data.AbilityScores.Dexterity.Score,
-          constitution: data.AbilityScores.Constitution.Score,
-          intelligence: data.AbilityScores.Intelligence.Score,
-          wisdom: data.AbilityScores.Wisdom.Score,
-          charisma: data.AbilityScores.Charisma.Score,
+          strength: monster.data.AbilityScores.Strength.Score,
+          dexterity: monster.data.AbilityScores.Dexterity.Score,
+          constitution: monster.data.AbilityScores.Constitution.Score,
+          intelligence: monster.data.AbilityScores.Intelligence.Score,
+          wisdom: monster.data.AbilityScores.Wisdom.Score,
+          charisma: monster.data.AbilityScores.Charisma.Score,
         });
 
         // 3. saving throws
-        const savingThrowRows = Object.entries(data.SavingThrows).map(
+        const savingThrowRows = Object.entries(monster.data.SavingThrows).map(
           ([abilityName, value]) => ({
             monster_id: monster.id,
             ability_name: abilityName,
@@ -125,7 +110,7 @@ export class DrizzleMonsterRepository implements IMonsterRepository {
         }
 
         // 4. skills
-        const skillRows = Object.entries(data.Skills).map(
+        const skillRows = Object.entries(monster.data.Skills).map(
           ([skillName, value]) => ({
             monster_id: monster.id,
             skill_name: skillName,
@@ -138,17 +123,17 @@ export class DrizzleMonsterRepository implements IMonsterRepository {
 
         // 5. traits
         const allTraits: NewMonsterTraitRow[] = [
-          ...this.traitsFromRecord(monster.id, 'special_trait', data.SpecialTraits),
-          ...this.traitsFromRecord(monster.id, 'action', data.Actions),
+          ...this.traitsFromRecord(monster.id, 'special_trait', monster.data.SpecialTraits),
+          ...this.traitsFromRecord(monster.id, 'action', monster.data.Actions),
         ];
 
         if (legendary) {
           allTraits.push(
-            ...this.traitsFromRecord(monster.id, 'bonus_action', data.BonusActions),
-            ...this.traitsFromRecord(monster.id, 'reaction', data.Reactions),
-            ...this.traitsFromRecord(monster.id, 'legendary_trait', data.LegendaryTraits),
-            ...this.traitsFromRecord(monster.id, 'legendary_action_option', data.LegendaryActions.Options),
-            ...this.traitsFromRecord(monster.id, 'lair_action', data.LairActions),
+            ...this.traitsFromRecord(monster.id, 'bonus_action', monster.data.BonusActions),
+            ...this.traitsFromRecord(monster.id, 'reaction', monster.data.Reactions),
+            ...this.traitsFromRecord(monster.id, 'legendary_trait', monster.data.LegendaryTraits),
+            ...this.traitsFromRecord(monster.id, 'legendary_action_option', monster.data.LegendaryActions.Options),
+            ...this.traitsFromRecord(monster.id, 'lair_action', monster.data.LairActions),
           );
         }
 
@@ -157,8 +142,8 @@ export class DrizzleMonsterRepository implements IMonsterRepository {
         }
 
         // 6. regional effects (legendary only)
-        if (legendary && data.RegionalEffects.length > 0) {
-          const regionalRows = data.RegionalEffects.map((description, index) => ({
+        if (legendary && monster.data.RegionalEffects.length > 0) {
+          const regionalRows = monster.data.RegionalEffects.map((description, index) => ({
             monster_id: monster.id,
             description,
             ordinal: index,

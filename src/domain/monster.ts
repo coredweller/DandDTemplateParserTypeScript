@@ -90,6 +90,13 @@ export interface Monster {
   readonly createdAt: Date;
 }
 
+// ── Type guard ──────────────────────────────────────────────────────────────
+export function isLegendaryMonster(
+  monster: Monster,
+): monster is Monster & { type: 'legendary'; data: LegendaryMonsterTemplate } {
+  return monster.type === 'legendary';
+}
+
 // ── Factories ───────────────────────────────────────────────────────────────
 export function createMonster(
   type: 'general',
