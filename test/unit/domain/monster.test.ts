@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   abilityModifier,
   createMonster,
+  isLegendaryMonster,
   reconstituteMonster,
   monsterIdFrom,
 } from '../../../src/domain/monster.js';
@@ -43,6 +44,28 @@ describe('createMonster', () => {
     const a = createMonster('general', generalTemplate);
     const b = createMonster('general', generalTemplate);
     expect(a.id).not.toBe(b.id);
+  });
+});
+
+describe('isLegendaryMonster', () => {
+  it('returns false for a general monster', () => {
+    const monster = createMonster('general', generalTemplate);
+    expect(isLegendaryMonster(monster)).toBe(false);
+  });
+
+  it('returns true for a legendary monster', () => {
+    const monster = createMonster('legendary', legendaryTemplate);
+    expect(isLegendaryMonster(monster)).toBe(true);
+  });
+
+  it('narrows the type so legendary fields are accessible', () => {
+    const monster = createMonster('legendary', legendaryTemplate);
+    if (isLegendaryMonster(monster)) {
+      // TypeScript should allow this without a cast — compile error = test failure
+      expect(monster.data.ChallengeRating).toBe('24');
+    } else {
+      throw new Error('Expected legendary monster to be narrowed');
+    }
   });
 });
 
