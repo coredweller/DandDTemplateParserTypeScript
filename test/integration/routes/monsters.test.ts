@@ -10,9 +10,10 @@ const VALID_UUID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
 
 function makeStubService(): IMonsterService {
   return {
-    createGeneral:  vi.fn(),
+    createGeneral:   vi.fn(),
     createLegendary: vi.fn(),
-    getById:        vi.fn(),
+    getById:         vi.fn(),
+    query:           vi.fn(),
   };
 }
 
@@ -206,5 +207,86 @@ describe('GET /api/v1/monsters/:id', () => {
     });
 
     expect(response.statusCode).toBe(400);
+  });
+});
+
+describe('GET /api/v1/monsters', () => {
+  let app: FastifyInstance;
+  let service: IMonsterService;
+
+  const emptyPage = { items: [], total: 0, limit: 20, offset: 0 };
+
+  beforeEach(async () => {
+    service = makeStubService();
+    app = await buildApp({ monsterService: service });
+  });
+
+  afterEach(async () => { await app.close(); });
+
+  it('returns 200 with a page of results', async () => {
+    vi.mocked(service.query).mockResolvedValueOnce(ok(emptyPage));
+
+    const response = await app.inject({ method: 'GET', url: '/api/v1/monsters' });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json<typeof emptyPage>();
+    expect(body.total).toBe(0);
+    expect(body.items).toEqual([]);
+    expect(body.limit).toBe(20);
+    expect(body.offset).toBe(0);
+  });
+
+  it('passes type filter to service', async () => {
+    vi.mocked(service.query).mockResolvedValueOnce(ok(emptyPage));
+
+    await app.inject({ method: 'GET', url: '/api/v1/monsters?type=legendary' });
+
+    expect(vi.mocked(service.query).mock.calls[0]![0]!.type).toBe('legendary');
+  });
+
+  it('passes levelMin and levelMax filters to service', async () => {
+    vi.mocked(service.query).mockResolvedValueOnce(ok(emptyPage));
+
+    await app.inject({ method: 'GET', url: '/api/v1/monsters?levelMin=5&levelMax=10' });
+
+    const filters = vi.mocked(service.query).mock.calls[0]![0]!;
+    expect(filters.levelMin).toBe(5);
+    expect(filters.levelMax).toBe(10);
+  });
+
+  it('applies default limit and offset when not provided', async () => {
+    vi.mocked(service.query).mockResolvedValueOnce(ok(emptyPage));
+
+    await app.inject({ method: 'GET', url: '/api/v1/monsters' });
+
+    const filters = vi.mocked(service.query).mock.calls[0]![0]!;
+    expect(filters.limit).toBe(20);
+    expect(filters.offset).toBe(0);
+  });
+
+  it('returns 400 when levelMin exceeds levelMax', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/monsters?levelMin=10&levelMax=5',
+    });
+
+    expect(response.statusCode).toBe(400);
+  });
+
+  it('returns 400 for an unknown type value', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/monsters?type=unknown',
+    });
+
+    expect(response.statusCode).toBe(400);
+  });
+
+  it('returns 500 when service returns InternalError', async () => {
+    vi.mocked(service.query).mockResolvedValueOnce(fail({ kind: 'InternalError', message: 'DB down' }));
+
+    const response = await app.inject({ method: 'GET', url: '/api/v1/monsters' });
+
+    expect(response.statusCode).toBe(500);
   });
 });

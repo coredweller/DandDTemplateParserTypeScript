@@ -3,6 +3,8 @@ import {
   createMonster,
   type GeneralMonsterTemplate,
   type LegendaryMonsterTemplate,
+  type MonsterFilters,
+  type MonsterPage,
   type MonsterId,
 } from '../domain/monster.js';
 import { renderMonsterHtml } from '../domain/monster-html.js';
@@ -39,6 +41,17 @@ export class MonsterService implements IMonsterService {
     } catch (error: unknown) {
       this.log.error({ err: error, characterName: data.CharacterName }, 'Failed to create legendary monster');
       return fail({ kind: 'InternalError', message: 'Failed to save monster' });
+    }
+  }
+
+  async query(filters: MonsterFilters): Promise<Result<MonsterPage>> {
+    try {
+      const page = await this.repository.findMany(filters);
+      this.log.debug({ filters, total: page.total }, 'Monsters queried');
+      return ok(page);
+    } catch (error: unknown) {
+      this.log.error({ err: error, filters }, 'Failed to query monsters');
+      return fail({ kind: 'InternalError', message: 'Failed to query monsters' });
     }
   }
 

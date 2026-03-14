@@ -1,14 +1,17 @@
-import { eq } from 'drizzle-orm';
+import { and, eq, gte, lte, sql } from 'drizzle-orm';
 import type { Logger } from 'pino';
 import type { Db } from '../db.js';
 import {
   abilityModifier,
   isLegendaryMonster,
+  monsterIdFrom,
   reconstituteMonster,
   type AbilityScores,
   type GeneralMonsterTemplate,
   type LegendaryMonsterTemplate,
   type Monster,
+  type MonsterFilters,
+  type MonsterPage,
   type MonsterId,
 } from '../domain/monster.js';
 import {
@@ -294,6 +297,52 @@ export class DrizzleMonsterRepository implements IMonsterRepository {
       return reconstituteMonster(monsterRow.id, 'general', generalData, monsterRow.created_at);
     } catch (error: unknown) {
       this.log.error({ err: error, monsterId: id }, 'Failed to find monster by ID');
+      throw error;
+    }
+  }
+
+  async findMany(filters: MonsterFilters): Promise<MonsterPage> {
+    try {
+      const conditions = [];
+      if (filters.type !== undefined) conditions.push(eq(monsters.type, filters.type));
+      if (filters.levelMin !== undefined) conditions.push(gte(monsters.level, filters.levelMin));
+      if (filters.levelMax !== undefined) conditions.push(lte(monsters.level, filters.levelMax));
+
+      const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+      const [rows, [countRow]] = await Promise.all([
+        this.db
+          .select({
+            id: monsters.id,
+            type: monsters.type,
+            character_name: monsters.character_name,
+            level: monsters.level,
+            created_at: monsters.created_at,
+          })
+          .from(monsters)
+          .where(whereClause)
+          .limit(filters.limit)
+          .offset(filters.offset),
+        this.db
+          .select({ total: sql<number>`count(*)::int` })
+          .from(monsters)
+          .where(whereClause),
+      ]);
+
+      return {
+        items: rows.map((row) => ({
+          id: monsterIdFrom(row.id),
+          type: row.type as 'general' | 'legendary',
+          characterName: row.character_name,
+          level: row.level,
+          createdAt: row.created_at,
+        })),
+        total: countRow?.total ?? 0,
+        limit: filters.limit,
+        offset: filters.offset,
+      };
+    } catch (error: unknown) {
+      this.log.error({ err: error, filters }, 'Failed to find monsters');
       throw error;
     }
   }

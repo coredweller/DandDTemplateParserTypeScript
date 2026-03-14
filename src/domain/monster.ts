@@ -97,6 +97,30 @@ export function isLegendaryMonster(
   return monster.type === 'legendary';
 }
 
+// ── Query types ─────────────────────────────────────────────────────────────
+export interface MonsterFilters {
+  readonly type?: 'general' | 'legendary' | undefined;
+  readonly levelMin?: number | undefined;
+  readonly levelMax?: number | undefined;
+  readonly limit: number;
+  readonly offset: number;
+}
+
+export interface MonsterSummary {
+  readonly id: MonsterId;
+  readonly type: 'general' | 'legendary';
+  readonly characterName: string;
+  readonly level: number | null;
+  readonly createdAt: Date;
+}
+
+export interface MonsterPage {
+  readonly items: MonsterSummary[];
+  readonly total: number;
+  readonly limit: number;
+  readonly offset: number;
+}
+
 // ── Factories ───────────────────────────────────────────────────────────────
 export function createMonster(
   type: 'general',

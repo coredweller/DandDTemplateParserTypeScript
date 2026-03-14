@@ -2,7 +2,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { Logger } from 'pino';
 import { MonsterService } from '../../../src/services/monster.service.js';
 import type { IMonsterRepository } from '../../../src/repositories/monster.repository.interface.js';
-import { createMonster, monsterIdFrom, type Monster } from '../../../src/domain/monster.js';
+import { createMonster, monsterIdFrom, type Monster, type MonsterPage } from '../../../src/domain/monster.js';
 import { generalTemplate, legendaryTemplate } from '../../fixtures.js';
 
 const nullLog = {
@@ -18,6 +18,7 @@ function makeStubRepo(): IMonsterRepository {
   return {
     save:     vi.fn(),
     findById: vi.fn(),
+    findMany: vi.fn(),
   };
 }
 
@@ -123,6 +124,49 @@ describe('MonsterService.getById', () => {
     vi.mocked(repo.findById).mockRejectedValueOnce(new Error('DB down'));
 
     const result = await service.getById(monsterIdFrom('00000000-0000-0000-0000-000000000000'));
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.kind).toBe('InternalError');
+  });
+});
+
+describe('MonsterService.query', () => {
+  let repo: IMonsterRepository;
+  let service: MonsterService;
+
+  beforeEach(() => {
+    repo = makeStubRepo();
+    service = new MonsterService(repo, nullLog);
+  });
+
+  it('returns a page of results on success', async () => {
+    const page: MonsterPage = { items: [], total: 0, limit: 20, offset: 0 };
+    vi.mocked(repo.findMany).mockResolvedValueOnce(page);
+
+    const result = await service.query({ limit: 20, offset: 0 });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value).toEqual(page);
+    expect(repo.findMany).toHaveBeenCalledWith({ limit: 20, offset: 0 });
+  });
+
+  it('passes filters through to repository', async () => {
+    const page: MonsterPage = { items: [], total: 0, limit: 10, offset: 0 };
+    vi.mocked(repo.findMany).mockResolvedValueOnce(page);
+
+    await service.query({ type: 'legendary', levelMin: 5, levelMax: 10, limit: 10, offset: 0 });
+
+    expect(repo.findMany).toHaveBeenCalledWith({
+      type: 'legendary', levelMin: 5, levelMax: 10, limit: 10, offset: 0,
+    });
+  });
+
+  it('returns InternalError when repository throws', async () => {
+    vi.mocked(repo.findMany).mockRejectedValueOnce(new Error('DB down'));
+
+    const result = await service.query({ limit: 20, offset: 0 });
 
     expect(result.ok).toBe(false);
     if (result.ok) return;

@@ -84,6 +84,35 @@ const ProblemDetailsSchema = z.object({
 });
 const MonsterIdParamSchema = z.object({ id: z.string().uuid('Invalid monster ID format') });
 
+const MonsterQuerySchema = z
+  .object({
+    type: z.enum(['general', 'legendary']).optional(),
+    levelMin: z.coerce.number().int().nonnegative().optional(),
+    levelMax: z.coerce.number().int().nonnegative().optional(),
+    limit: z.coerce.number().int().positive().max(100).default(20),
+    offset: z.coerce.number().int().nonnegative().default(0),
+  })
+  .refine(
+    ({ levelMin, levelMax }) =>
+      levelMin === undefined || levelMax === undefined || levelMin <= levelMax,
+    { message: 'levelMin must not exceed levelMax', path: ['levelMin'] },
+  );
+
+const MonsterPageSchema = z.object({
+  items: z.array(
+    z.object({
+      id: z.string().uuid(),
+      type: z.enum(['general', 'legendary']),
+      characterName: z.string(),
+      level: z.number().int().nullable(),
+      createdAt: z.string(),
+    }),
+  ),
+  total: z.number().int(),
+  limit: z.number().int(),
+  offset: z.number().int(),
+});
+
 // ── Factory — injects service dependency, returns a Fastify plugin ─────────────
 export function monstersPlugin(service: IMonsterService): FastifyPluginCallbackZod {
   return function (app, _opts, done) {
@@ -142,6 +171,42 @@ export function monstersPlugin(service: IMonsterService): FastifyPluginCallbackZ
         }
 
         return reply.status(201).send({ id: result.value.id, html: result.value.html });
+      },
+    );
+
+    // GET /monsters
+    app.get(
+      '/monsters',
+      {
+        schema: {
+          querystring: MonsterQuerySchema,
+          response: {
+            200: MonsterPageSchema,
+            400: ProblemDetailsSchema,
+            500: ProblemDetailsSchema,
+          },
+        },
+      },
+      async (request, reply) => {
+        const result = await service.query(request.query);
+
+        if (!result.ok) {
+          const code = statusFor(result.error, request.log);
+          return reply.status(code as 500).send({
+            type: 'https://tools.ietf.org/html/rfc7807',
+            title: result.error.kind === 'ValidationError' ? result.error.message : 'Internal Server Error',
+            status: code,
+            instance: request.url,
+          });
+        }
+
+        return {
+          ...result.value,
+          items: result.value.items.map((item) => ({
+            ...item,
+            createdAt: item.createdAt.toISOString(),
+          })),
+        };
       },
     );
 
