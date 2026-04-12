@@ -22,7 +22,7 @@ function statusFor(error: AppError, log: FastifyBaseLogger): 400 | 404 | 409 | 5
 
 // ── Zod schemas ────────────────────────────────────────────────────────────────
 const AbilityScoreSchema = z
-  .object({ Score: z.number().int() })
+  .object({ Score: z.number().int().min(1, 'Ability score must be between 1 and 30.').max(30, 'Ability score must be between 1 and 30.') })
   .transform(({ Score }) => ({ Score, Modifier: abilityModifier(Score) }));
 const AbilityScoresSchema = z.object({
   Strength: AbilityScoreSchema,
