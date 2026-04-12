@@ -34,36 +34,16 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          pr_number: ${{ github.event_name == 'workflow_dispatch' && inputs.pr_number || github.event.pull_request.number }}
-          prompt: |
+          direct_prompt: |
             Review the changes in this pull request. Run all steps below and post a single consolidated comment on the PR. Do not make any commits or file changes — this is a review only.
 
-            Step 1 — Code Review:
-            Use the agent defined in @.claude/agents/code-reviewer.md to review all changed files for code quality, correctness, maintainability, and adherence to project standards.
-
-            Step 2 — Security Review:
-            Use the agent defined in @.claude/agents/security-reviewer.md to audit all changed files for security vulnerabilities, unsafe patterns, and OWASP Top 10 issues.
-
-            Step 3 — Code Standards Check:
-            Verify all changed files comply with the rules in @.claude/rules/code-standards.md. Flag any violations (silent failures, duplicate logic, improper error handling, meaningless variable names, deprecated APIs, etc.) with the file and line number.
-
-            Step 4 — Code Suggestions:
-            For any issues found in Steps 1–3, write suggested fixes as fenced code blocks. Use @.claude/agents/typescript-expert.md for TypeScript guidance and the typescript-api skill (defined in @.claude/skills/typescript-api/SKILL.md, with references in @.claude/skills/typescript-api/reference/) for project-specific patterns. Every suggestion must comply with @.claude/rules/code-standards.md before being included.
+            Use the agent defined in @code-reviewer-plugin/agents/code-reviewer-standards.md to review all changed files for code quality, correctness, maintainability, and adherence to project standards.
 
             Output format:
             Post one PR comment structured as:
             ## PR Review
 
             ### Code Review
-            <findings from Step 1>
+            <findings>
 
-            ### Security Review
-            <findings from Step 2>
-
-            ### Code Standards
-            <findings from Step 3>
-
-            ### Suggestions
-            <suggested fixes from Step 4, or "No suggestions" if all steps passed clean>
-
-            If a section finds no issues, say so explicitly rather than omitting it.
+            If no issues are found, say so explicitly rather than omitting the section.

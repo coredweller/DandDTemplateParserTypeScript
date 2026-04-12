@@ -99,6 +99,35 @@ describe('POST /api/v1/monsters/general', () => {
     expect(response.statusCode).toBe(400);
   });
 
+  it.each([0, 31])('returns 400 when a Score is out of range (%i)', async (score) => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/monsters/general',
+      payload: {
+        ...generalRequestBody,
+        AbilityScores: { ...generalRequestBody.AbilityScores, Strength: { Score: score } },
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+  });
+
+  it.each([1, 15, 30])('returns 201 when a Score is at a valid boundary (%i)', async (score) => {
+    const monster = createMonster('general', generalTemplate);
+    vi.mocked(service.createGeneral).mockResolvedValueOnce(ok({ id: monster.id, html: '' }));
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/monsters/general',
+      payload: {
+        ...generalRequestBody,
+        AbilityScores: { ...generalRequestBody.AbilityScores, Strength: { Score: score } },
+      },
+    });
+
+    expect(response.statusCode).toBe(201);
+  });
+
   it('returns 500 when service returns InternalError', async () => {
     vi.mocked(service.createGeneral).mockResolvedValueOnce(fail({ kind: 'InternalError', message: 'DB down' }));
 

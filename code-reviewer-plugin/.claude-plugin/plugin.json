@@ -1,0 +1,9 @@
+{
+  "name": "code-reviewer",
+  "version": "1.0.0",
+  "description": "Code review agent with embedded project standards, quality checklist, and structured review process.",
+  "components": {
+    "agents": ["agents/code-reviewer-standards.md"],
+    "skills": ["skills/code-reviewer"]
+  }
+}

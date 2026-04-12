@@ -1,4 +1,4 @@
-# Code Standards
+# Project Code Standards
 
 ## Modify Existing Files First
 
@@ -14,9 +14,7 @@ Does relevant file exist?
 
 When creating new files: remove/update old files, update all imports, delete orphans. NEVER leave old + new both existing.
 
-## Error Handling
-
-### No Silent Failures, No Mock Data, No Fallbacks
+## Error Handling — No Silent Failures, No Mock Data, No Fallbacks
 
 ```
 // ❌ FORBIDDEN
@@ -39,12 +37,9 @@ catch (e) {
 
 ## DRY Enforcement
 
-Before writing ANY code:
-
-1. CHECK: Does this logic exist in shared/common utilities? → YES: import it
-2. ASK: Will another module need this? → YES: create in shared utilities first
-
-**Forbidden:** inline utility logic when shared version exists; duplicating logic across files.
+- Check whether logic already exists in shared/common utilities before writing it
+- If another module will need the same logic, create it in shared utilities first
+- **Forbidden:** inline utility logic when a shared version exists; duplicating logic across files
 
 | Metric | Target | Action |
 | ------ | ------ | ------ |
