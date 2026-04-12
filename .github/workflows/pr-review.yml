@@ -34,8 +34,7 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          pr_number: ${{ github.event_name == 'workflow_dispatch' && inputs.pr_number || github.event.pull_request.number }}
-          prompt: |
+          direct_prompt: |
             Review the changes in this pull request. Run all steps below and post a single consolidated comment on the PR. Do not make any commits or file changes — this is a review only.
 
             Step 1 — Code Review:
