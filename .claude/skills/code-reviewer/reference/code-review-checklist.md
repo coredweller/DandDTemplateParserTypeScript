@@ -8,7 +8,6 @@
 - Missing input validation
 - Insecure dependencies (outdated, vulnerable)
 - Path traversal risks (user-controlled file paths)
-- CSRF vulnerabilities
 - Authentication bypasses
 
 > For deep security analysis (OWASP Top 10, secrets detection, dependency CVEs, financial transaction security), delegate to the `security-reviewer` agent.
@@ -19,25 +18,25 @@
 - Large files (>800 lines)
 - Deep nesting (>4 levels)
 - Missing error handling (try/catch)
-- console.log statements
+- `console.log` instead of structured logger (pino)
+- `any` type escapes suppressing type safety
+- Missing `.js` extension on ESM imports (causes runtime failure under NodeNext)
+- Unhandled promise rejections / missing `await` on async calls
 - Mutation patterns
 - Missing tests for new code
 
 ## Performance (MEDIUM)
 
 - Inefficient algorithms (O(n^2) when O(n log n) possible)
-- Unnecessary re-renders in Angular (missing OnPush, unoptimized signals)
 - Missing memoization
-- Large bundle sizes
-- Unoptimized images
 - Missing caching
 - N+1 queries
+- Unbounded DB queries (no LIMIT)
 
 ## Best Practices (MEDIUM)
 
 - TODO/FIXME without tickets
-- Missing JSDoc for public APIs
-- Accessibility issues (missing ARIA labels, poor contrast)
+- `process.env` read directly instead of via validated `config`
 - Poor variable naming (x, tmp, data)
 - Magic numbers without explanation
 - Inconsistent formatting
