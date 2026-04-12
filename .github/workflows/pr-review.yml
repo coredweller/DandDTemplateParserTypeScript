@@ -40,10 +40,7 @@ jobs:
             Step 1 — Code Review:
             Use the agent defined in @.claude/agents/code-reviewer.md to review all changed files for code quality, correctness, maintainability, and adherence to project standards.
 
-            Step 2 — Security Review:
-            Use the agent defined in @.claude/agents/security-reviewer.md to audit all changed files for security vulnerabilities, unsafe patterns, and OWASP Top 10 issues.
-
-            Step 3 — Code Standards Check:
+            Step 2 — Code Standards Check:
             Verify all changed files comply with the rules in @.claude/rules/code-standards.md. Flag any violations with the file and line number.
 
             Output format:
@@ -53,10 +50,7 @@ jobs:
             ### Code Review
             <findings from Step 1>
 
-            ### Security Review
-            <findings from Step 2>
-
             ### Code Standards
-            <findings from Step 3>
+            <findings from Step 2>
 
             If a section finds no issues, say so explicitly rather than omitting it.
